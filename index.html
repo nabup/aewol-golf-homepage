@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>애월중학교 총동창회 동문친선 골프대회</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --g1:#04342C;--g2:#085041;--g3:#0F6E56;--g4:#1D9E75;--g5:#9FE1CB;--g6:#E1F5EE;
+  --gold:#EF9F27;--gold2:#FAC775;--gold3:#FAEEDA;
+  --cream:#F4F1EA;--dark:#1a1a1a;--mid:#3a3a3a;--muted:#6b7280;
+}
+html{font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--dark);}
+body{min-height:100vh;display:flex;flex-direction:column;}
+
+/* HERO */
+.hero{background:var(--g1);padding:3rem 1.5rem 2rem;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(60deg,transparent,transparent 60px,rgba(29,158,117,0.04) 60px,rgba(29,158,117,0.04) 61px),repeating-linear-gradient(-60deg,transparent,transparent 60px,rgba(29,158,117,0.04) 60px,rgba(29,158,117,0.04) 61px);}
+.hero-eyebrow{display:inline-block;border:1px solid var(--g5);color:var(--g5);font-size:0.72rem;letter-spacing:0.15em;padding:0.3rem 1rem;border-radius:20px;margin-bottom:1rem;}
+.hero-title{font-family:'Noto Serif KR',serif;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:700;color:#fff;line-height:1.3;margin-bottom:0.4rem;}
+.hero-title span{color:var(--gold);}
+.hero-sub{font-size:0.88rem;color:var(--g5);margin-bottom:1.5rem;}
+.hero-stats{display:flex;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;}
+.hs{padding:0.6rem 1.2rem;border-right:1px solid rgba(255,255,255,0.1);text-align:center;}
+.hs:last-child{border-right:none;}
+.hs-label{font-size:0.65rem;color:var(--g5);letter-spacing:0.1em;display:block;margin-bottom:0.15rem;}
+.hs-val{font-size:0.95rem;color:#fff;font-weight:500;}
+.cd-row{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;}
+.cd-box{background:rgba(255,255,255,0.06);border:1px solid rgba(29,158,117,0.2);border-radius:10px;padding:0.5rem 0.9rem;min-width:60px;text-align:center;}
+.cd-num{font-size:1.6rem;font-weight:700;color:var(--gold);font-family:'Noto Serif KR',serif;line-height:1;}
+.cd-lbl{font-size:0.6rem;color:var(--g5);letter-spacing:0.08em;margin-top:2px;}
+
+/* TAB NAV */
+.tab-nav{background:var(--g2);display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(29,158,117,0.2);}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;padding:0.85rem 1.2rem;font-size:0.82rem;font-weight:500;color:rgba(255,255,255,0.5);background:none;border:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:color 0.2s,border-color 0.2s;white-space:nowrap;}
+.tab-btn.active{color:var(--g5);border-bottom-color:var(--g4);}
+.tab-btn:hover:not(.active){color:rgba(255,255,255,0.75);}
+
+/* CONTENT */
+.tab-content{display:none;padding:2rem 1.5rem;max-width:860px;margin:0 auto;width:100%;}
+.tab-content.active{display:block;}
+
+/* Section headings */
+.sec-label{font-size:0.7rem;letter-spacing:0.18em;color:var(--g4);font-weight:500;margin-bottom:0.35rem;}
+.sec-title{font-family:'Noto Serif KR',serif;font-size:clamp(1.3rem,3vw,1.8rem);font-weight:700;color:var(--g1);margin-bottom:0.5rem;}
+.sec-desc{font-size:0.88rem;color:var(--muted);margin-bottom:1.8rem;line-height:1.7;}
+
+/* Cards grid */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;}
+.info-card{background:white;border-radius:12px;padding:1.25rem;border-left:3px solid var(--g4);}
+.ic-icon{font-size:1.4rem;margin-bottom:0.4rem;}
+.ic-label{font-size:0.65rem;color:var(--g3);letter-spacing:0.08em;margin-bottom:0.2rem;}
+.ic-val{font-size:0.95rem;font-weight:700;color:var(--g1);}
+.ic-sub{font-size:0.78rem;color:var(--muted);margin-top:0.15rem;}
+
+/* Rule cards */
+.rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem;}
+@media(max-width:700px){.rule-grid{grid-template-columns:1fr;}}
+.rule-card{background:white;border-radius:12px;padding:1.5rem;border:1px solid rgba(0,0,0,0.06);}
+.rule-card h3{font-family:'Noto Serif KR',serif;font-size:1rem;color:var(--g2);margin-bottom:0.9rem;display:flex;align-items:center;gap:0.4rem;}
+.rule-card ul{list-style:none;display:flex;flex-direction:column;gap:0.5rem;}
+.rule-card li{font-size:0.85rem;color:var(--mid);padding-left:1.1rem;position:relative;}
+.rule-card li::before{content:'•';position:absolute;left:0;color:var(--g4);font-weight:700;}
+.highlight{background:var(--gold3);border-left:3px solid var(--gold);padding:0.8rem 1rem;margin-top:0.9rem;font-size:0.82rem;color:var(--mid);}
+
+/* Awards */
+.award-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.85rem;}
+@media(max-width:900px){.award-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:520px){.award-grid{grid-template-columns:1fr;}}
+.award-card{background:var(--g1);border-radius:12px;padding:1.1rem;text-align:center;transition:transform 0.15s;}
+.award-card:hover{transform:translateY(-2px);}
+.award-card.gold{background:linear-gradient(135deg,var(--g1) 0%,#2a5a46 100%);border:1px solid rgba(239,159,39,0.35);}
+.aw-icon{font-size:1.5rem;margin-bottom:0.4rem;}
+.aw-name{font-size:0.88rem;font-weight:700;color:var(--gold2);margin-bottom:0.2rem;}
+.aw-detail{font-size:0.72rem;color:rgba(255,255,255,0.45);}
+.gift-bar{background:var(--g6);border:1px solid var(--g5);border-radius:10px;padding:1rem 1.25rem;margin-top:1.5rem;font-size:0.9rem;color:var(--g2);text-align:center;}
+
+/* Timeline */
+.timeline{display:flex;flex-direction:column;}
+.tl-row{display:grid;grid-template-columns:80px 1fr;position:relative;}
+.tl-row:not(:last-child)::after{content:'';position:absolute;left:36px;top:30px;width:1px;bottom:-10px;background:var(--g6);}
+.tl-time{text-align:right;padding-top:0.6rem;padding-right:1rem;}
+.tl-t{font-size:0.88rem;font-weight:700;color:var(--g3);}
+.tl-dot{position:absolute;left:30px;top:14px;width:12px;height:12px;background:var(--g4);border-radius:50%;border:2px solid var(--cream);box-shadow:0 0 0 2px var(--g4);}
+.tl-body{padding:0.3rem 0 1.8rem 1.5rem;}
+.tl-body h4{font-size:0.95rem;font-weight:700;color:var(--g1);margin-bottom:0.2rem;}
+.tl-body p{font-size:0.82rem;color:var(--muted);}
+
+/* ── REGISTER TAB (방법 B) ── */
+.reg-layout{display:grid;grid-template-columns:1fr 2fr;gap:2rem;align-items:start;}
+@media(max-width:640px){.reg-layout{grid-template-columns:1fr;}}
+.reg-info h3{font-family:'Noto Serif KR',serif;font-size:1.1rem;color:var(--g2);margin-bottom:1rem;}
+.info-row{display:flex;gap:0.6rem;margin-bottom:0.7rem;align-items:flex-start;}
+.ir-key{font-size:0.72rem;color:var(--g3);font-weight:500;min-width:64px;padding-top:2px;}
+.ir-val{font-size:0.85rem;color:var(--dark);}
+.fee-box{background:var(--g1);border-radius:10px;padding:1.1rem;margin-top:1.2rem;}
+.fee-lbl{font-size:0.65rem;color:var(--g5);letter-spacing:0.1em;margin-bottom:0.15rem;}
+.fee-amt{font-size:1.8rem;font-weight:700;color:var(--gold);}
+.fee-inc{font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.2rem;}
+
+
+/* 신청 연락처 크게 표시 */
+.contact-panel{background:white;border-radius:18px;border:1px solid rgba(0,0,0,0.06);overflow:hidden;box-shadow:0 14px 36px rgba(4,52,44,0.12);}
+.contact-main{background:linear-gradient(135deg,var(--g1) 0%,var(--g2) 55%,var(--g3) 100%);padding:2rem 1.5rem;text-align:center;color:white;}
+.contact-kicker{display:inline-block;font-size:0.72rem;letter-spacing:0.14em;color:var(--g5);border:1px solid rgba(159,225,203,0.45);border-radius:999px;padding:0.35rem 0.9rem;margin-bottom:0.85rem;}
+.contact-title{font-family:'Noto Serif KR',serif;font-size:clamp(1.45rem,4vw,2.2rem);font-weight:700;margin-bottom:0.35rem;}
+.contact-name{font-size:clamp(1.55rem,5vw,2.6rem);font-weight:800;color:var(--gold2);line-height:1.2;margin:0.6rem 0 0.25rem;}
+.contact-role{font-size:0.92rem;color:var(--g5);margin-bottom:0.9rem;}
+.contact-phone{display:block;font-size:clamp(2rem,8vw,4rem);font-weight:900;letter-spacing:-0.03em;color:#fff;text-decoration:none;line-height:1.05;margin:0.8rem 0 1.2rem;text-shadow:0 3px 10px rgba(0,0,0,0.28);}
+.contact-phone:hover{color:var(--gold2);}
+.call-btn{display:inline-block;background:var(--gold);color:#1a1a1a;text-decoration:none;border-radius:999px;padding:0.8rem 1.65rem;font-weight:800;font-size:0.98rem;box-shadow:0 8px 20px rgba(0,0,0,0.18);}
+.call-btn:hover{background:var(--gold2);}
+.contact-guide{padding:1.4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.85rem;background:#fff;}
+.guide-item{background:var(--g6);border-radius:12px;padding:1rem;border-left:3px solid var(--g4);}
+.guide-label{font-size:0.68rem;color:var(--g3);font-weight:700;letter-spacing:0.08em;margin-bottom:0.25rem;}
+.guide-value{font-size:0.92rem;color:var(--g1);font-weight:700;line-height:1.45;}
+.contact-note{margin-top:1.25rem;background:var(--gold3);border:1px solid var(--gold2);border-radius:12px;padding:1rem 1.2rem;color:#633806;font-size:0.9rem;line-height:1.65;}
+.form-download-card{margin-top:1.25rem;background:white;border:1px solid rgba(15,110,86,0.16);border-radius:16px;padding:1.25rem;display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;box-shadow:0 10px 26px rgba(4,52,44,0.08);}
+.fd-icon{width:52px;height:52px;border-radius:14px;background:var(--g6);display:flex;align-items:center;justify-content:center;font-size:1.7rem;}
+.fd-title{font-family:'Noto Serif KR',serif;font-size:1.08rem;font-weight:700;color:var(--g1);margin-bottom:0.25rem;}
+.fd-desc{font-size:0.84rem;color:var(--muted);line-height:1.55;}
+.download-btn{display:inline-block;background:var(--g3);color:white;text-decoration:none;border-radius:999px;padding:0.78rem 1.25rem;font-size:0.9rem;font-weight:800;white-space:nowrap;}
+.download-btn:hover{background:var(--g2);}
+@media(max-width:700px){.form-download-card{grid-template-columns:1fr;text-align:center;}.fd-icon{margin:0 auto;}.download-btn{width:100%;}}
+
+/* 구글폼 내장 영역 */
+.gform-wrap{background:white;border-radius:14px;border:1px solid rgba(0,0,0,0.06);overflow:hidden;}
+.gform-top{background:var(--g2);padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;}
+.gform-top-icon{font-size:1.4rem;}
+.gform-top-text h3{font-family:'Noto Serif KR',serif;font-size:1rem;color:white;margin-bottom:0.1rem;}
+.gform-top-text p{font-size:0.75rem;color:var(--g5);}
+.gform-notice{background:var(--g6);padding:0.6rem 1.25rem;font-size:0.78rem;color:var(--g2);border-bottom:1px solid rgba(29,158,117,0.15);}
+.gform-iframe-wrap{position:relative;width:100%;}
+.gform-iframe-wrap iframe{width:100%;border:none;display:block;}
+
+/* 테스트 배너 */
+.test-banner{background:#FAEEDA;border:1px solid var(--gold);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1.25rem;font-size:0.82rem;color:#633806;display:flex;gap:0.5rem;align-items:flex-start;}
+
+/* Participants */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(0,0,0,0.07);}
+table{width:100%;border-collapse:collapse;min-width:460px;}
+thead tr{background:var(--g1);}
+thead th{padding:0.75rem 1rem;text-align:left;font-size:0.75rem;color:var(--g5);font-weight:500;letter-spacing:0.04em;}
+tbody tr{border-bottom:1px solid rgba(0,0,0,0.05);transition:background 0.15s;}
+tbody tr:hover{background:var(--g6);}
+tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
+.badge{display:inline-block;padding:0.15rem 0.55rem;border-radius:9px;font-size:0.68rem;font-weight:500;}
+.b-rep{background:var(--gold3);color:#633806;}
+.b-gen{background:var(--g6);color:var(--g2);}
+.empty-row td{text-align:center;padding:2.5rem;color:var(--muted);}
+.f-row{margin-bottom:0;}
+.f-row label{display:block;font-size:0.75rem;font-weight:500;color:var(--mid);margin-bottom:0.3rem;}
+.f-row input,.f-row select,.f-row textarea{width:100%;padding:0.6rem 0.8rem;border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:0.88rem;font-family:inherit;color:var(--dark);background:white;transition:border-color 0.2s;}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{outline:none;border-color:var(--g4);box-shadow:0 0 0 3px rgba(29,158,117,0.1);}
+.f-submit{width:100%;padding:0.85rem;background:var(--g3);color:white;border:none;border-radius:9px;font-size:0.95rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background 0.2s;}
+.f-submit:hover{background:var(--g2);}
+
+.cta-bar{background:var(--g6);border-radius:10px;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;margin-top:2rem;flex-wrap:wrap;gap:0.75rem;}
+.cta-bar span{font-size:0.88rem;color:var(--g2);}
+.cta-btn{background:var(--g3);color:white;border:none;padding:0.6rem 1.4rem;border-radius:25px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.2s;}
+.cta-btn:hover{background:var(--g2);}
+
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--g2);color:white;padding:0.65rem 1.4rem;border-radius:25px;font-size:0.85rem;z-index:999;transition:transform 0.3s;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">제17회 달오름축제 번외경기</div>
+  <h1 class="hero-title">애월중학교 총동창회<br><span>동문친선 골프대회</span></h1>
+  <p class="hero-sub">모여서 화합하고 뭉쳐서 하나되어 함께 타오르자!</p>
+  <div class="hero-stats">
+    <div class="hs"><span class="hs-label">대회일</span><span class="hs-val">2026. 09. 02 (수)</span></div>
+    <div class="hs"><span class="hs-label">장소</span><span class="hs-val">제주 엘리시안CC</span></div>
+    <div class="hs"><span class="hs-label">집결</span><span class="hs-val">11:30까지</span></div>
+    <div class="hs"><span class="hs-label">참가비</span><span class="hs-val" style="display:inline-block;line-height:1.15;">145,000원<br><span style="font-size:0.62rem;font-weight:400;color:var(--g5);">(만찬비용포함)</span></span></div>
+  </div>
+  <div class="cd-caption" style="font-size:0.72rem;color:var(--g5);letter-spacing:0.08em;margin-bottom:0.5rem;">신청 마감(7월 31일·토)까지</div>
+  <div class="cd-row">
+    <div class="cd-box"><div class="cd-num" id="cd-d">--</div><div class="cd-lbl">DAYS</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-h">--</div><div class="cd-lbl">HRS</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-m">--</div><div class="cd-lbl">MIN</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-s">--</div><div class="cd-lbl">SEC</div></div>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">📋 대회개요</button>
+  <button class="tab-btn" onclick="switchTab('rules',this)">🏌️ 대회방식</button>
+  <button class="tab-btn" onclick="switchTab('awards',this)">🏆 시상내역</button>
+  <button class="tab-btn" onclick="switchTab('schedule',this)">📅 당일일정</button>
+  <button class="tab-btn" onclick="switchTab('register',this)">✍️ 참가신청</button>
+</nav>
+
+<!-- TAB: 대회개요 -->
+<div class="tab-content active" id="tab-overview">
+  <div class="sec-label">OVERVIEW</div>
+  <h2 class="sec-title">대회 개요</h2>
+  <p class="sec-desc">승패보다는 동문과의 매너와 배려를 우선으로 즐거운 라운딩이 되시길 기대합니다.</p>
+  <div class="card-grid">
+    <div class="info-card"><div class="ic-icon">🏌️</div><div class="ic-label">대회명</div><div class="ic-val">동문친선 골프대회</div><div class="ic-sub">애월중학교 총동창회</div></div>
+    <div class="info-card"><div class="ic-icon">📅</div><div class="ic-label">일시</div><div class="ic-val">2026년 9월 2일 (수)</div><div class="ic-sub">11:30까지 집결</div></div>
+    <div class="info-card"><div class="ic-icon">📍</div><div class="ic-label">장소</div><div class="ic-val">제주 엘리시안CC</div><div class="ic-sub">제주특별자치도</div></div>
+    <div class="info-card"><div class="ic-icon">📝</div><div class="ic-label">신청 마감</div><div class="ic-val">2026년 7월 31일</div><div class="ic-sub">문대윤 체육이사에게 신청</div></div>
+    <div class="info-card"><div class="ic-icon">💰</div><div class="ic-label">참가비</div><div class="ic-val">145,000원</div><div class="ic-sub">그린피+카트비+저녁만찬</div></div>
+    <div class="info-card"><div class="ic-icon">🎁</div><div class="ic-label">참가 선물</div><div class="ic-val">골프공 1줄</div><div class="ic-sub">골프양말 포함 전원 증정</div></div>
+  </div>
+  <div class="cta-bar">
+    <span>신청 마감 <strong>2026년 7월 31일</strong>까지</span>
+    <button class="cta-btn" onclick="switchTab('register',document.querySelectorAll('.tab-btn')[4])">문대윤에게 신청하기 →</button>
+  </div>
+</div>
+
+<!-- TAB: 대회방식 -->
+<div class="tab-content" id="tab-rules">
+  <div class="sec-label">RULES</div>
+  <h2 class="sec-title">대회 방식 및 규정</h2>
+  <p class="sec-desc">한국골프규칙 및 본 대회 로컬룰을 준수하여 진행됩니다.</p>
+  <div class="rule-grid">
+    <div class="rule-card">
+      <h3>🏆 단체 경기</h3>
+      <ul>
+        <li>기수별 팀으로 참가</li>
+        <li>기수 대표 선수 <strong>4명 중 3명</strong> 집계</li>
+        <li>최저타 순으로 순위 결정</li>
+        <li>기별 팀 수 관계없이 참가 가능</li>
+        <li>동타 시 나머지 1인 스코어로 결정</li>
+        <li>그래도 동타 시 백카운트 적용</li>
+      </ul>
+      <div class="highlight">✅ 기수 대표 선수 4명은 신청 시 반드시 표기</div>
+    </div>
+    <div class="rule-card">
+      <h3>👤 개인 경기</h3>
+      <ul>
+        <li>신페리오 방식으로 핸디캡 적용</li>
+        <li>메달리스트: 총 타수 최저 기록자</li>
+        <li>장타상: 페어웨이 안착 최장 거리</li>
+        <li>근접상: 지정 홀 핀에 가장 가까운 샷</li>
+        <li>동타 시 백카운트 방식으로 결정</li>
+        <li>단체전 참가자는 신페리오 시상 제외</li>
+      </ul>
+    </div>
+    <div class="rule-card">
+      <h3>📋 로컬 규칙</h3>
+      <ul>
+        <li>멀리건 일체 금지 (첫 홀 포함)</li>
+        <li>홀당 최대 타수: 더블파(양파)</li>
+        <li>OB: 2벌타 / 패널티 에어리어: 1벌타</li>
+        <li>OB 시 특설티 우선 사용</li>
+        <li>경계 애매 시 캐디 판단 우선</li>
+        <li>컨시드 라인 사전 표시 적용</li>
+      </ul>
+    </div>
+    <div class="rule-card">
+      <h3>🏌️ 티 박스</h3>
+      <ul>
+        <li>여성: 레이디 티 사용</li>
+        <li>남성: 화이트 티 사용</li>
+        <li>26회 이상 선배: 시니어 티 사용</li>
+        <li>복장: 정상적인 골프 복장 필수</li>
+        <li>지각으로 18홀 미완료 시 시상 제외</li>
+      </ul>
+      <div class="highlight">📞 문의: 문대윤 집행위원 010-3693-0301</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: 시상 -->
+<div class="tab-content" id="tab-awards">
+  <div class="sec-label">AWARDS</div>
+  <h2 class="sec-title">시상 내역</h2>
+  <p class="sec-desc">단체·개인·행운상까지 풍성한 시상이 준비되어 있습니다.</p>
+  <div class="award-grid">
+    <div class="award-card gold"><div class="aw-icon">🥇</div><div class="aw-name">단체 우승</div><div class="aw-detail">기수 대표팀 최저타</div></div>
+    <div class="award-card gold"><div class="aw-icon">🥈</div><div class="aw-name">단체 준우승</div><div class="aw-detail">기수 대표팀 2위</div></div>
+    <div class="award-card"><div class="aw-icon">🏅</div><div class="aw-name">신페리오 우승</div><div class="aw-detail">핸디 적용 1위</div></div>
+    <div class="award-card"><div class="aw-icon">🎖️</div><div class="aw-name">신페리오 준우승</div><div class="aw-detail">핸디 적용 2위</div></div>
+    <div class="award-card"><div class="aw-icon">⭐</div><div class="aw-name">메달리스트</div><div class="aw-detail">남 / 여<br>총 타수 최저</div></div>
+    <div class="award-card"><div class="aw-icon">💪</div><div class="aw-name">장타상 남/여</div><div class="aw-detail">드라이버 최장 거리</div></div>
+    <div class="award-card"><div class="aw-icon">🎯</div><div class="aw-name">근접상 남/여</div><div class="aw-detail">핀 최근접</div></div>
+    <div class="award-card"><div class="aw-icon">🍀</div><div class="aw-name">행운상</div><div class="aw-detail">추첨·다수 수여</div></div>
+  </div>
+  <div class="gift-bar">🎁 참가하시는 <strong>모든 동문</strong>께 골프공(1줄) + 골프양말 증정!</div>
+</div>
+
+<!-- TAB: 일정 -->
+<div class="tab-content" id="tab-schedule">
+  <div class="sec-label">SCHEDULE</div>
+  <h2 class="sec-title">당일 진행 일정</h2>
+  <p class="sec-desc">2026년 9월 2일 (수) · 제주 엘리시안CC</p>
+  <div class="timeline">
+    <div class="tl-row"><div class="tl-time"><div class="tl-t">11:00</div></div><div class="tl-dot"></div><div class="tl-body"><h4>도착 및 등록</h4><p>클럽하우스 집결 · 참가비 결제 · 참가 선물 수령</p></div></div>
+    <div class="tl-row"><div class="tl-time"><div class="tl-t">11:30</div></div><div class="tl-dot"></div><div class="tl-body"><h4>집결 마감</h4><p>조 편성 안내 · 로컬룰 공지 · 단체 사진 촬영</p></div></div>
+    <div class="tl-row"><div class="tl-time"><div class="tl-t">12:02</div></div><div class="tl-dot"></div><div class="tl-body"><h4>티오프 시작</h4><p>전 조 라운드 개시</p></div></div>
+    <div class="tl-row"><div class="tl-time"><div class="tl-t">17:30</div></div><div class="tl-dot"></div><div class="tl-body"><h4>라운드 종료</h4><p>스코어카드 제출 · 성적 집계</p></div></div>
+    <div class="tl-row"><div class="tl-time"><div class="tl-t">18:00</div></div><div class="tl-dot"></div><div class="tl-body"><h4>시상식 및 저녁만찬</h4><p>시상 · 행운권 추첨 · 동문 친선 만찬</p></div></div>
+  </div>
+</div>
+
+<!-- TAB: 참가신청 -->
+<div class="tab-content" id="tab-register">
+  <div class="sec-label">REGISTRATION</div>
+  <h2 class="sec-title">참가 신청</h2>
+  <p class="sec-desc">참가신청서를 다운로드하여 작성한 후 문대윤 체육이사에게 제출해 주세요.</p>
+
+  <div class="form-download-card">
+    <div class="fd-icon">📄</div>
+    <div>
+      <div class="fd-title">참가신청서 다운로드</div>
+      <div class="fd-desc">HWPX 파일을 다운로드하여 작성한 후 문대윤 체육이사에게 제출해 주세요.</div>
+    </div>
+    <a class="download-btn" href="/downloads/golf_registration_form.hwpx" download>참가신청서 HWPX 다운로드</a>
+  </div>
+
+  <div class="contact-panel" style="margin-top:1.5rem;">
+    <div class="contact-main">
+      <div class="contact-kicker">신청서 제출 · 문의 전담</div>
+      <div class="contact-title">참가신청서 제출</div>
+      <div class="contact-name">문대윤 체육이사</div>
+      <div class="contact-role">골프대회 집행위원</div>
+      <a class="contact-phone" href="tel:01036930301">010-3693-0301</a>
+      <a class="call-btn" href="tel:01036930301">📞 바로 전화하기</a>
+    </div>
+    <div class="contact-guide">
+      <div class="guide-item">
+        <div class="guide-label">신청 마감</div>
+        <div class="guide-value">2026년 7월 31일까지</div>
+      </div>
+      <div class="guide-item">
+        <div class="guide-label">신청 방법</div>
+        <div class="guide-value">참가신청서 작성 후<br>문대윤 체육이사에게 제출</div>
+      </div>
+      <div class="guide-item">
+        <div class="guide-label">필수 표기</div>
+        <div class="guide-value">참가 인원 및 기수 대표 선수 4명</div>
+      </div>
+      <div class="guide-item">
+        <div class="guide-label">참가비</div>
+        <div class="guide-value">145,000원<br>현장 개인 결제</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-note" style="margin-top:1.25rem;">
+    ✅ 참가신청서를 다운로드하여 작성한 후, <strong>문대윤 체육이사</strong>에게 제출해 주세요.<br>
+    ※ 참가비에는 그린피 · 카트비 · 저녁만찬이 포함됩니다.
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer style="background:var(--g1);padding:2rem 1.5rem;text-align:center;margin-top:auto;">
+  <p style="font-family:'Noto Serif KR',serif;font-size:1rem;color:white;margin-bottom:0.3rem;">⛳ 애월중학교 총동창회</p>
+  <p style="font-size:0.8rem;color:var(--g5);margin-bottom:1rem;">집행위원장 이광춘 · 총동창회장 강택주</p>
+  <p style="font-size:0.9rem;color:white;margin-bottom:0.25rem;">신청·문의: 문대윤 체육이사</p>
+  <p style="font-size:1.55rem;font-weight:900;color:var(--gold);letter-spacing:-0.02em;margin-bottom:0.25rem;">010-3693-0301</p>
+  <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:1rem 0;">
+  <p style="font-size:0.72rem;color:rgba(255,255,255,0.25);">© 2026 애월중학교 총동창회. 모여서 화합하고 뭉쳐서 하나되어 함께 타오르자!</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function updateCountdown() {
+  const target = new Date('2026-07-31T23:59:59+09:00');
+  const diff = target - new Date();
+  const row = document.querySelector('.cd-row');
+  const caption = document.querySelector('.cd-caption');
+  if (diff <= 0) {
+    if (row) {
+      row.innerHTML = '<div class="cd-box" style="min-width:160px;"><div class="cd-num" style="font-size:1.15rem;">신청 마감</div></div>';
+    }
+    if (caption) caption.textContent = '참가신청이 마감되었습니다';
+    return;
+  }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('cd-d').textContent = d;
+  document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+</script>
+</body>
+</html>
