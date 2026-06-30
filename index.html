@@ -397,7 +397,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 
   <div style="text-align:center;margin-top:1rem;">
     <button class="news-refresh-btn" onclick="loadAllNews()">🔄 뉴스 새로고침</button>
-    <p class="news-source-note">Google News RSS 기반 · 경기 결과 위주로 자동 수집</p>
+    <p class="news-source-note">Google News RSS 기반 · 제목/요약 재검사 후 골프 기사만 표시</p>
   </div>
 </div>
 
@@ -467,44 +467,52 @@ function googleNewsUrl(query, hl = 'ko', gl = 'KR', ceid = 'KR:ko') {
 const DOMESTIC_FEEDS = [
   {
     name: 'KPGA 경기 결과',
-    url: googleNewsUrl('KPGA 우승 OR KPGA 결과 OR KPGA 최종라운드 when:21d'),
-    lang: 'ko'
+    url: googleNewsUrl('KPGA 골프 (우승 OR 결과 OR 최종라운드 OR 대회 OR 투어) when:21d'),
+    lang: 'ko',
+    focusKeywords: ['kpga','한국프로골프','코리안투어']
   },
   {
     name: 'KLPGA 경기 결과',
-    url: googleNewsUrl('KLPGA 우승 OR KLPGA 결과 OR KLPGA 최종라운드 when:21d'),
-    lang: 'ko'
+    url: googleNewsUrl('KLPGA 골프 (우승 OR 결과 OR 최종라운드 OR 대회 OR 투어) when:21d'),
+    lang: 'ko',
+    focusKeywords: ['klpga','한국여자프로골프']
   },
   {
     name: '제주 출신 선수',
-    url: googleNewsUrl('"제주 출신" 골프 OR 제주 골퍼 OR 제주출신 프로 when:60d'),
+    url: googleNewsUrl('골프 ("제주 출신" OR 제주출신 OR 제주 골퍼 OR 제주 프로골퍼) when:60d'),
     lang: 'ko',
-    badge: '🍊 제주'
+    badge: '🍊 제주',
+    focusKeywords: ['골프','골퍼','프로골퍼','kpga','klpga','pga','lpga'],
+    mustHaveOneOf: ['제주','제주출신','제주 출신']
   }
 ];
 
 const OVERSEAS_FEEDS = [
   {
     name: '한국선수 PGA 활약',
-    url: googleNewsUrl('임성재 OR 김주형 OR 안병훈 OR "PGA 한국선수" 우승 when:21d'),
+    url: googleNewsUrl('골프 PGA (임성재 OR 김주형 OR 안병훈 OR 김시우 OR 한국선수) when:21d'),
     lang: 'ko',
-    badge: '🇰🇷 한국선수'
+    badge: '🇰🇷 한국선수',
+    focusKeywords: ['pga','임성재','김주형','안병훈','김시우']
   },
   {
     name: '한국선수 LPGA 활약',
-    url: googleNewsUrl('고진영 OR 김효주 OR 양희영 OR "LPGA 한국선수" 우승 when:21d'),
+    url: googleNewsUrl('골프 LPGA (고진영 OR 김효주 OR 양희영 OR 유해란 OR 최혜진 OR 한국선수) when:21d'),
     lang: 'ko',
-    badge: '🇰🇷 한국선수'
+    badge: '🇰🇷 한국선수',
+    focusKeywords: ['lpga','고진영','김효주','양희영','유해란','최혜진','전인지','김세영']
   },
   {
     name: 'PGA 투어 결과',
-    url: googleNewsUrl('PGA Tour 우승 OR PGA 최종라운드 when:14d'),
-    lang: 'ko'
+    url: googleNewsUrl('골프 PGA Tour (우승 OR 결과 OR 최종라운드 OR 챔피언십) when:14d'),
+    lang: 'ko',
+    focusKeywords: ['pga','tour']
   },
   {
     name: 'LPGA 투어 결과',
-    url: googleNewsUrl('LPGA 우승 OR LPGA 최종라운드 when:14d'),
-    lang: 'ko'
+    url: googleNewsUrl('골프 LPGA (우승 OR 결과 OR 최종라운드 OR 챔피언십) when:14d'),
+    lang: 'ko',
+    focusKeywords: ['lpga']
   }
 ];
 
@@ -591,6 +599,61 @@ function normalizeItem(item, feed) {
   };
 }
 
+/* 골프뉴스 엄격 필터
+   Google News RSS는 검색어와 다른 종목 기사를 섞어 줄 수 있습니다.
+   따라서 화면 출력 전 제목·요약·출처를 다시 검사해 골프 관련 기사만 남깁니다. */
+const GOLF_KEYWORDS = [
+  '골프','골퍼','프로골퍼','kpga','klpga','pga','lpga','usga','골프장',
+  '코리안투어','한국프로골프','한국여자프로골프','마스터스','디오픈','라이더컵','프레지던츠컵',
+  '임성재','김주형','안병훈','김시우','고진영','김효주','양희영','유해란','최혜진','전인지','김세영','박인비',
+  '셰플러','매킬로이','넬리 코다','릴리아 부'
+];
+
+const GOLF_EVENT_KEYWORDS = [
+  '우승','준우승','공동','단독','선두','최종','최종라운드','라운드','언더파','버디','보기','이글',
+  '컷통과','컷 탈락','티샷','퍼트','퍼팅','드라이버','페어웨이','그린','투어','대회','챔피언십','오픈'
+];
+
+const NON_GOLF_KEYWORDS = [
+  '축구','야구','농구','배구','테니스','탁구','배드민턴','핸드볼','럭비','크리켓','수영','육상','마라톤',
+  '피겨','스케이팅','스키','스노보드','복싱','격투기','ufc','f1','모터스포츠','e스포츠','롤드컵','리그오브레전드',
+  'kbo','mlb','nba','kbl','v리그','월드컵','올림픽','아시안게임','토트넘','맨유','리버풀','손흥민','이강인','김민재'
+];
+
+const HARD_EXCLUDE_KEYWORDS = [
+  '부동산','아파트','분양','주식','코인','환율','선거','정당','대통령','국회','범죄','화재','교통사고','날씨'
+];
+
+function includesAny(text, words) {
+  const lower = String(text || '').toLowerCase();
+  return words.some(word => lower.includes(String(word).toLowerCase()));
+}
+
+function isStrictGolfNews(item, feed) {
+  const haystack = `${item.title || ''} ${item.description || ''} ${item.source || ''} ${item.feedName || ''}`.toLowerCase();
+
+  // 1차: 명백히 다른 일반 뉴스는 제거
+  if (includesAny(haystack, HARD_EXCLUDE_KEYWORDS) && !includesAny(haystack, GOLF_KEYWORDS)) return false;
+
+  // 2차: 골프 핵심 단어가 반드시 있어야 함
+  if (!includesAny(haystack, GOLF_KEYWORDS)) return false;
+
+  // 3차: 각 피드의 주제어도 하나 이상 포함되어야 함
+  if (Array.isArray(feed.focusKeywords) && feed.focusKeywords.length && !includesAny(haystack, feed.focusKeywords)) return false;
+
+  // 4차: 제주 피드처럼 반드시 필요한 지역/대상 조건이 있으면 검사
+  if (Array.isArray(feed.mustHaveOneOf) && feed.mustHaveOneOf.length && !includesAny(haystack, feed.mustHaveOneOf)) return false;
+
+  // 5차: 다른 종목 키워드가 섞인 경우, 골프 경기·투어 문맥이 없으면 제거
+  if (includesAny(haystack, NON_GOLF_KEYWORDS) && !includesAny(haystack, GOLF_EVENT_KEYWORDS)) return false;
+
+  return true;
+}
+
+function filterGolfOnly(items, feed) {
+  return items.filter(item => isStrictGolfNews(item, feed));
+}
+
 function parseXmlFeed(xmlText, feed) {
   const parser = new DOMParser();
   const xml = parser.parseFromString(xmlText, 'text/xml');
@@ -641,7 +704,7 @@ async function fetchFeed(feed) {
 
   for (const loader of loaders) {
     try {
-      const items = await loader();
+      const items = filterGolfOnly(await loader(), feed);
       if (items.length) return items;
     } catch (err) {
       console.warn(`[골프뉴스] ${feed.name} 수집 실패 후 다음 방법 시도`, err);
