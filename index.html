@@ -650,16 +650,58 @@ async function fetchFeed(feed) {
   return [];
 }
 
+// 신뢰도 우선순위 (1등급 > 2등급 > 3등급 > 그 외)
+// 같은 사건일 때 등급 높은 소스의 기사 1건만 선택
+const SOURCE_TIER_1 = ['조선일보','조선','중앙일보','중앙','동아일보','동아','서울신문'];
+const SOURCE_TIER_2 = ['KBS','SBS','MBC','JTBC','YTN','TV조선','채널A','MBN'];
+const SOURCE_TIER_3 = ['연합뉴스','연합','로이터','Reuters','뉴시스','뉴스1','스포츠동아','스포츠조선','스포츠서울','스포츠한국','일간스포츠'];
+
+function sourceTier(item) {
+  const src = (item.source || item.feedName || '') + ' ' + (item.title || '');
+  if (SOURCE_TIER_1.some(s => src.includes(s))) return 1;
+  if (SOURCE_TIER_2.some(s => src.includes(s))) return 2;
+  if (SOURCE_TIER_3.some(s => src.includes(s))) return 3;
+  return 4;
+}
+
+// 제목에서 사건의 핵심 키워드만 추출 — 언론사명/조사/꾸밈말 제거
+function eventKey(title) {
+  if (!title) return '';
+  let t = title.toLowerCase();
+  // 따옴표/특수문자 제거
+  t = t.replace(/['"'""'']/g, '').replace(/[!?…·,\-–—()[\]【】]/g, ' ');
+  // 언론사명·꼬리표 제거
+  const removeSources = [...SOURCE_TIER_1, ...SOURCE_TIER_2, ...SOURCE_TIER_3,
+    '네이트','다음','v.daum.net','msn','브릿지경제','데일리스포츠','골프한국','네이버','google','뉴스'];
+  removeSources.forEach(s => { t = t.replaceAll(s.toLowerCase(), ' '); });
+  // 한글/숫자/영문만 남기고 압축
+  t = t.replace(/[^\uac00-\ud7a3a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+  // 핵심 단어 5개만 정렬해서 키로 사용 (어순 무시)
+  const words = t.split(' ').filter(w => w.length >= 2).slice(0, 8).sort();
+  return words.join('|');
+}
+
 function uniqueAndSort(items, limit) {
-  const seen = new Set();
-  return items
-    .filter(item => {
-      const key = (item.title || '').toLowerCase().replace(/\s+/g, '').slice(0, 80);
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
+  const groups = new Map();
+  for (const item of items) {
+    const key = eventKey(item.title);
+    if (!key) continue;
+    if (!groups.has(key)) {
+      groups.set(key, item);
+    } else {
+      // 같은 사건 — 신뢰도 높은(=tier 숫자 작은) 기사로 교체
+      const existing = groups.get(key);
+      if (sourceTier(item) < sourceTier(existing)) groups.set(key, item);
+    }
+  }
+
+  // 최종: 신뢰도 우선, 같은 등급이면 최신순
+  return [...groups.values()]
+    .sort((a, b) => {
+      const tierDiff = sourceTier(a) - sourceTier(b);
+      if (tierDiff !== 0) return tierDiff;
+      return (new Date(b.pubDate || 0)) - (new Date(a.pubDate || 0));
     })
-    .sort((a, b) => (new Date(b.pubDate || 0)) - (new Date(a.pubDate || 0)))
     .slice(0, limit);
 }
 
