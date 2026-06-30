@@ -185,6 +185,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 .news-error{background:#fff3cd;border-radius:10px;padding:1rem 1.25rem;font-size:0.85rem;color:#856404;margin-bottom:1rem;}
 .news-refresh-btn{background:var(--g3);color:white;border:none;padding:0.5rem 1.2rem;border-radius:20px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:1rem;}
 .news-refresh-btn:hover{background:var(--g2);}
+.news-source-note{font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -200,7 +201,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
     <div class="hs"><span class="hs-label">집결</span><span class="hs-val">11:30까지</span></div>
     <div class="hs"><span class="hs-label">참가비</span><span class="hs-val" style="display:inline-block;line-height:1.15;">145,000원<br><span style="font-size:0.62rem;font-weight:400;color:var(--g5);">(만찬비용포함)</span></span></div>
   </div>
-  <div class="cd-caption" style="font-size:0.72rem;color:var(--g5);letter-spacing:0.08em;margin-bottom:0.5rem;">신청 마감(7월 31일·토)까지</div>
+  <div class="cd-caption" style="font-size:0.72rem;color:var(--g5);letter-spacing:0.08em;margin-bottom:0.5rem;">신청 마감(7월 31일·금)까지</div>
   <div class="cd-row">
     <div class="cd-box"><div class="cd-num" id="cd-d">--</div><div class="cd-lbl">DAYS</div></div>
     <div class="cd-box"><div class="cd-num" id="cd-h">--</div><div class="cd-lbl">HRS</div></div>
@@ -389,12 +390,12 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
   <!-- 해외 뉴스 -->
   <div class="news-section-label">🌍 해외 골프뉴스 (PGA·LPGA)</div>
   <div id="overseas-news" class="news-grid">
-    <div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 번역 중...</div></div>
+    <div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 불러오는 중...</div></div>
   </div>
 
   <div style="text-align:center;margin-top:1rem;">
     <button class="news-refresh-btn" onclick="loadAllNews()">🔄 뉴스 새로고침</button>
-    <p style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;">탭 클릭 시 자동 업데이트됩니다</p>
+    <p class="news-source-note">국내: Google News RSS · 해외: GOLF.com / FOX Sports / USGA / Google News</p>
   </div>
 </div>
 
@@ -448,16 +449,66 @@ function updateCountdown() {
 setInterval(updateCountdown, 1000);
 updateCountdown();
 
-/* ── 골프뉴스 기능 ── */
-const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+/* ── 골프뉴스 기능: 검증 RSS + 프록시 다중 백업 ──
+   정적 홈페이지(Netlify/Cloudflare Pages 등)에서는 RSS 원문을 바로 불러올 때
+   CORS 차단이 발생할 수 있어 RSS2JSON → AllOrigins → CodeTabs 순서로 시도합니다. */
+const RSS2JSON_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+const ALLORIGINS_PROXY = 'https://api.allorigins.win/raw?url=';
+const CODETABS_PROXY = 'https://api.codetabs.com/v1/proxy?quest=';
+const FETCH_TIMEOUT_MS = 9000;
+const TRANSLATE_OVERSEAS = true;
+
+function googleNewsUrl(query, hl = 'ko', gl = 'KR', ceid = 'KR:ko') {
+  return `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=${encodeURIComponent(hl)}&gl=${encodeURIComponent(gl)}&ceid=${encodeURIComponent(ceid)}`;
+}
+
 const DOMESTIC_FEEDS = [
-  'https://sports.news.naver.com/news/rss/golf.xml',
-  'https://www.golfzon.com/rss/news.xml',
+  {
+    name: 'Google News · 국내 골프',
+    url: googleNewsUrl('골프 OR KLPGA OR KPGA when:14d'),
+    lang: 'ko'
+  },
+  {
+    name: 'Google News · 제주 골프',
+    url: googleNewsUrl('제주 골프 OR 엘리시안 제주 when:30d'),
+    lang: 'ko'
+  }
 ];
+
 const OVERSEAS_FEEDS = [
-  'https://www.pgatour.com/content/pgatour/en_US/news.rss.xml',
-  'https://www.lpga.com/news/rss',
+  {
+    name: 'Google News · PGA/LPGA 한국어',
+    url: googleNewsUrl('PGA OR LPGA 골프 when:14d', 'ko', 'KR', 'KR:ko'),
+    lang: 'ko'
+  },
+  {
+    name: 'GOLF.com',
+    url: 'https://golf.com/feed/',
+    lang: 'en'
+  },
+  {
+    name: 'FOX Sports Golf',
+    url: 'https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&size=30&tags=fs%2Fkorn-ferry-tour%2Cfs%2Flpga-tour%2Cfs%2Fpga-tour%2Cfs%2Fliv',
+    lang: 'en'
+  },
+  {
+    name: 'USGA Press Releases',
+    url: 'https://mediacenter.usga.org/press-releases?pagetemplate=rss',
+    lang: 'en'
+  }
 ];
+
+const NEWS_FALLBACK_LINKS = {
+  domestic: [
+    { title: 'Google 뉴스에서 국내 골프뉴스 보기', url: 'https://news.google.com/search?q=%EA%B3%A8%ED%94%84%20KLPGA%20KPGA&hl=ko&gl=KR&ceid=KR%3Ako' },
+    { title: 'Google 뉴스에서 제주 골프뉴스 보기', url: 'https://news.google.com/search?q=%EC%A0%9C%EC%A3%BC%20%EA%B3%A8%ED%94%84&hl=ko&gl=KR&ceid=KR%3Ako' }
+  ],
+  overseas: [
+    { title: 'GOLF.com 최신 뉴스 보기', url: 'https://golf.com/news/' },
+    { title: 'FOX Sports Golf 뉴스 보기', url: 'https://www.foxsports.com/golf' },
+    { title: 'USGA 뉴스 보기', url: 'https://mediacenter.usga.org/' }
+  ]
+};
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -466,74 +517,219 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
 }
 
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function stripHTML(value) {
+  const raw = String(value ?? '');
+  const noTag = raw
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ');
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = noTag;
+  return textarea.value.replace(/\s+/g, ' ').trim();
+}
+
+function safeURL(url) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '#';
+  } catch {
+    return '#';
+  }
+}
+
+function getXmlText(parent, ...tagNames) {
+  for (const tag of tagNames) {
+    const found = parent.getElementsByTagName(tag)[0];
+    if (found && found.textContent) return found.textContent.trim();
+  }
+  return '';
+}
+
+function getXmlLink(item) {
+  const direct = getXmlText(item, 'link');
+  if (direct) return direct;
+
+  const links = item.getElementsByTagName('link');
+  for (const link of links) {
+    const rel = link.getAttribute('rel');
+    const href = link.getAttribute('href');
+    if (href && (!rel || rel === 'alternate')) return href;
+  }
+  return '';
+}
+
+function normalizeItem(item, feed) {
+  const title = stripHTML(item.title || '');
+  if (!title) return null;
+  return {
+    title,
+    description: stripHTML(item.description || item.content || '').slice(0, 140),
+    link: safeURL(item.link || item.url || feed.home || '#'),
+    pubDate: item.pubDate || item.published || item.updated || '',
+    source: stripHTML(item.source || item.author || feed.name),
+    feedName: feed.name,
+    lang: feed.lang || 'ko'
+  };
+}
+
+function parseXmlFeed(xmlText, feed) {
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(xmlText, 'text/xml');
+  if (xml.querySelector('parsererror')) throw new Error('RSS XML 해석 실패');
+
+  const nodes = Array.from(xml.querySelectorAll('item, entry'));
+  return nodes.map(node => normalizeItem({
+    title: getXmlText(node, 'title'),
+    description: getXmlText(node, 'description', 'summary', 'content:encoded', 'content'),
+    link: getXmlLink(node),
+    pubDate: getXmlText(node, 'pubDate', 'published', 'updated', 'dc:date'),
+    source: getXmlText(node, 'source', 'author', 'name')
+  }, feed)).filter(Boolean);
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal, cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchFeedWithRss2Json(feed) {
+  const res = await fetchWithTimeout(RSS2JSON_PROXY + encodeURIComponent(feed.url));
+  const data = await res.json();
+  if (data.status !== 'ok' || !Array.isArray(data.items)) throw new Error(data.message || 'RSS2JSON 실패');
+  return data.items.map(item => normalizeItem(item, feed)).filter(Boolean);
+}
+
+async function fetchFeedWithXmlProxy(feed, proxyBase) {
+  const res = await fetchWithTimeout(proxyBase + encodeURIComponent(feed.url));
+  const xmlText = await res.text();
+  if (!xmlText || !/<(rss|feed|item|entry)[\s>]/i.test(xmlText)) throw new Error('RSS XML 없음');
+  return parseXmlFeed(xmlText, feed);
+}
+
+async function fetchFeed(feed) {
+  const loaders = [
+    () => fetchFeedWithRss2Json(feed),
+    () => fetchFeedWithXmlProxy(feed, ALLORIGINS_PROXY),
+    () => fetchFeedWithXmlProxy(feed, CODETABS_PROXY)
+  ];
+
+  for (const loader of loaders) {
+    try {
+      const items = await loader();
+      if (items.length) return items;
+    } catch (err) {
+      console.warn(`[골프뉴스] ${feed.name} 수집 실패 후 다음 방법 시도`, err);
+    }
+  }
+  return [];
+}
+
+function uniqueAndSort(items, limit) {
+  const seen = new Set();
+  return items
+    .filter(item => {
+      const key = (item.title || '').toLowerCase().replace(/\s+/g, '').slice(0, 80);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => (new Date(b.pubDate || 0)) - (new Date(a.pubDate || 0)))
+    .slice(0, limit);
+}
+
 function newsCardHTML(item, badge, badgeClass) {
-  const title = (item.title || '').replace(/<[^>]+>/g, '').trim();
-  const desc  = (item.description || item.content || '').replace(/<[^>]+>/g, '').trim().slice(0,80);
-  const link  = item.link || item.url || '#';
-  const source = item.author || item.source || '';
-  const date  = formatDate(item.pubDate || item.published);
-  return `<a class="news-card" href="${link}" target="_blank" rel="noopener">
+  const title = escapeHTML(stripHTML(item.title));
+  const desc = escapeHTML(stripHTML(item.description).slice(0, 100));
+  const link = safeURL(item.link);
+  const source = escapeHTML(stripHTML(item.source || item.feedName || ''));
+  const date = formatDate(item.pubDate);
+  const sourceLine = source ? `<div class="news-card-source">${source}</div>` : '';
+  const descLine = desc ? `<div class="news-card-desc">${desc}${desc.length >= 100 ? '...' : ''}</div>` : '';
+  const dateLine = date ? `<div class="news-card-date">${date}</div>` : `<div class="news-card-date">최신 기사</div>`;
+
+  return `<a class="news-card" href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer">
     <div class="news-card-body">
-      <span class="news-card-badge ${badgeClass}">${badge}</span>
-      ${source ? `<div class="news-card-source">${source}</div>` : ''}
+      <span class="news-card-badge ${badgeClass}">${escapeHTML(badge)}</span>
+      ${sourceLine}
       <div class="news-card-title">${title}</div>
-      ${desc ? `<div class="news-card-desc">${desc}...</div>` : ''}
-      <div class="news-card-date">${date}</div>
+      ${descLine}
+      ${dateLine}
     </div>
   </a>`;
 }
 
-async function fetchFeed(url) {
+function fallbackHTML(type) {
+  const links = NEWS_FALLBACK_LINKS[type] || [];
+  return `<div class="news-error" style="grid-column:1/-1;">
+    🔄 현재 RSS 자동 수집이 지연되고 있습니다. 아래 링크로 최신 뉴스를 바로 확인할 수 있습니다.
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.8rem;">
+      ${links.map(link => `<a class="download-btn" style="padding:0.55rem 0.85rem;font-size:0.78rem;" href="${escapeHTML(safeURL(link.url))}" target="_blank" rel="noopener noreferrer">${escapeHTML(link.title)}</a>`).join('')}
+    </div>
+  </div>`;
+}
+
+function shouldTranslate(text) {
+  return TRANSLATE_OVERSEAS && /[A-Za-z]/.test(text || '') && !/[가-힣]/.test(text || '');
+}
+
+async function translateText(text) {
+  const clean = stripHTML(text).slice(0, 400);
+  if (!clean || !shouldTranslate(clean)) return clean;
   try {
-    const res = await fetch(RSS_PROXY + encodeURIComponent(url));
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|ko`;
+    const res = await fetchWithTimeout(url, {}, 6000);
     const data = await res.json();
-    if (data.status === 'ok') return data.items || [];
-    return [];
-  } catch { return []; }
+    return stripHTML(data?.responseData?.translatedText || clean);
+  } catch {
+    return clean;
+  }
+}
+
+async function translateOverseasItems(items) {
+  return Promise.all(items.map(async item => {
+    if (item.lang !== 'en') return item;
+    const [title, description] = await Promise.all([
+      translateText(item.title),
+      translateText(item.description)
+    ]);
+    return { ...item, title, description };
+  }));
 }
 
 async function loadDomesticNews() {
   const el = document.getElementById('domestic-news');
   const results = await Promise.all(DOMESTIC_FEEDS.map(fetchFeed));
-  const items = results.flat().slice(0, 8);
-  if (!items.length) {
-    el.innerHTML = `<div class="news-error">🔄 국내 뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>`;
-    return;
-  }
-  el.innerHTML = items.map(i => newsCardHTML(i, '국내', 'badge-domestic')).join('');
-}
-
-async function translateText(text) {
-  if (!text) return '';
-  try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0,400))}&langpair=en|ko`;
-    const res = await fetch(url);
-    const data = await res.json();
-    return data?.responseData?.translatedText || text;
-  } catch { return text; }
+  const items = uniqueAndSort(results.flat(), 8);
+  el.innerHTML = items.length
+    ? items.map(item => newsCardHTML(item, '국내', 'badge-domestic')).join('')
+    : fallbackHTML('domestic');
 }
 
 async function loadOverseasNews() {
   const el = document.getElementById('overseas-news');
   const results = await Promise.all(OVERSEAS_FEEDS.map(fetchFeed));
-  const items = results.flat().slice(0, 6);
+  let items = uniqueAndSort(results.flat(), 6);
   if (!items.length) {
-    el.innerHTML = `<div class="news-error">🔄 해외 뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>`;
+    el.innerHTML = fallbackHTML('overseas');
     return;
   }
-  el.innerHTML = `<div class="news-loading" style="grid-column:1/-1;"><div class="spin">🌐</div><div>해외 뉴스 번역 중...</div></div>`;
 
-  const translated = await Promise.all(items.map(async i => {
-    const title = (i.title || '').replace(/<[^>]+>/g, '').trim();
-    const desc  = (i.description || i.content || '').replace(/<[^>]+>/g, '').trim().slice(0, 120);
-    const [tTitle, tDesc] = await Promise.all([
-      translateText(title),
-      translateText(desc)
-    ]);
-    return { ...i, title: tTitle, description: tDesc };
-  }));
-
-  el.innerHTML = translated.map(i => newsCardHTML(i, 'PGA·LPGA', 'badge-overseas')).join('');
+  el.innerHTML = '<div class="news-loading" style="grid-column:1/-1;"><div class="spin">🌐</div><div>해외 뉴스 정리 중...</div></div>';
+  items = await translateOverseasItems(items);
+  el.innerHTML = items.map(item => newsCardHTML(item, '해외', 'badge-overseas')).join('');
 }
 
 async function loadAllNews() {
@@ -541,8 +737,9 @@ async function loadAllNews() {
   document.getElementById('domestic-news').innerHTML =
     '<div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>';
   document.getElementById('overseas-news').innerHTML =
-    '<div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 번역 중...</div></div>';
-  await Promise.all([loadDomesticNews(), loadOverseasNews()]);
+    '<div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 불러오는 중...</div></div>';
+
+  await Promise.allSettled([loadDomesticNews(), loadOverseasNews()]);
   window._newsLoaded = true;
 }
 
