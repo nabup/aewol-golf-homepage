@@ -165,6 +165,26 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--g2);color:white;padding:0.65rem 1.4rem;border-radius:25px;font-size:0.85rem;z-index:999;transition:transform 0.3s;pointer-events:none;}
 .toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── 골프뉴스 탭 ── */
+.news-section-label{font-size:0.72rem;letter-spacing:0.15em;font-weight:600;color:var(--g3);margin-bottom:0.75rem;padding-bottom:0.4rem;border-bottom:2px solid var(--g6);}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:2rem;}
+.news-card{background:white;border-radius:12px;border:1px solid rgba(0,0,0,0.06);overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;text-decoration:none;display:flex;flex-direction:column;}
+.news-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(4,52,44,0.1);}
+.news-card-body{padding:1rem;flex:1;display:flex;flex-direction:column;}
+.news-card-source{font-size:0.68rem;color:var(--g3);font-weight:600;letter-spacing:0.05em;margin-bottom:0.4rem;}
+.news-card-title{font-size:0.9rem;font-weight:700;color:var(--dark);line-height:1.45;margin-bottom:0.5rem;flex:1;}
+.news-card-desc{font-size:0.78rem;color:var(--muted);line-height:1.55;margin-bottom:0.6rem;}
+.news-card-date{font-size:0.68rem;color:rgba(0,0,0,0.3);}
+.news-card-badge{display:inline-block;font-size:0.62rem;padding:0.15rem 0.5rem;border-radius:8px;font-weight:600;margin-bottom:0.5rem;}
+.badge-domestic{background:#E1F5EE;color:#085041;}
+.badge-overseas{background:#FFF3CD;color:#856404;}
+.news-loading{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:0.9rem;}
+.news-loading .spin{display:inline-block;font-size:1.5rem;animation:spin 1s linear infinite;margin-bottom:0.5rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.news-error{background:#fff3cd;border-radius:10px;padding:1rem 1.25rem;font-size:0.85rem;color:#856404;margin-bottom:1rem;}
+.news-refresh-btn{background:var(--g3);color:white;border:none;padding:0.5rem 1.2rem;border-radius:20px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:1rem;}
+.news-refresh-btn:hover{background:var(--g2);}
 </style>
 </head>
 <body>
@@ -196,6 +216,7 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
   <button class="tab-btn" onclick="switchTab('awards',this)">🏆 시상내역</button>
   <button class="tab-btn" onclick="switchTab('schedule',this)">📅 당일일정</button>
   <button class="tab-btn" onclick="switchTab('register',this)">✍️ 참가신청</button>
+  <button class="tab-btn" onclick="switchTab('news',this)">⛳ 골프뉴스</button>
 </nav>
 
 <!-- TAB: 대회개요 -->
@@ -353,6 +374,30 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
   </div>
 </div>
 
+<!-- TAB: 골프뉴스 -->
+<div class="tab-content" id="tab-news">
+  <div class="sec-label">GOLF NEWS</div>
+  <h2 class="sec-title">골프 뉴스</h2>
+  <p class="sec-desc">국내외 최신 골프 소식을 실시간으로 전해드립니다.</p>
+
+  <!-- 국내 뉴스 -->
+  <div class="news-section-label">🇰🇷 국내 골프뉴스</div>
+  <div id="domestic-news" class="news-grid">
+    <div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>
+  </div>
+
+  <!-- 해외 뉴스 -->
+  <div class="news-section-label">🌍 해외 골프뉴스 (PGA·LPGA)</div>
+  <div id="overseas-news" class="news-grid">
+    <div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 번역 중...</div></div>
+  </div>
+
+  <div style="text-align:center;margin-top:1rem;">
+    <button class="news-refresh-btn" onclick="loadAllNews()">🔄 뉴스 새로고침</button>
+    <p style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;">탭 클릭 시 자동 업데이트됩니다</p>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <footer style="background:var(--g1);padding:2rem 1.5rem;text-align:center;margin-top:auto;">
   <p style="font-family:'Noto Serif KR',serif;font-size:1rem;color:white;margin-bottom:0.3rem;">⛳ 애월중학교 총동창회</p>
@@ -373,6 +418,10 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   if (btn) btn.classList.add('active');
   window.scrollTo({top:0, behavior:'smooth'});
+  if (id === 'news' && !window._newsLoaded) {
+    loadAllNews();
+    window._newsLoaded = true;
+  }
 }
 
 function updateCountdown() {
@@ -398,6 +447,104 @@ function updateCountdown() {
 }
 setInterval(updateCountdown, 1000);
 updateCountdown();
+
+/* ── 골프뉴스 기능 ── */
+const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+const DOMESTIC_FEEDS = [
+  'https://sports.news.naver.com/news/rss/golf.xml',
+  'https://www.golfzon.com/rss/news.xml',
+];
+const OVERSEAS_FEEDS = [
+  'https://www.pgatour.com/content/pgatour/en_US/news.rss.xml',
+  'https://www.lpga.com/news/rss',
+];
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function newsCardHTML(item, badge, badgeClass) {
+  const title = (item.title || '').replace(/<[^>]+>/g, '').trim();
+  const desc  = (item.description || item.content || '').replace(/<[^>]+>/g, '').trim().slice(0,80);
+  const link  = item.link || item.url || '#';
+  const source = item.author || item.source || '';
+  const date  = formatDate(item.pubDate || item.published);
+  return `<a class="news-card" href="${link}" target="_blank" rel="noopener">
+    <div class="news-card-body">
+      <span class="news-card-badge ${badgeClass}">${badge}</span>
+      ${source ? `<div class="news-card-source">${source}</div>` : ''}
+      <div class="news-card-title">${title}</div>
+      ${desc ? `<div class="news-card-desc">${desc}...</div>` : ''}
+      <div class="news-card-date">${date}</div>
+    </div>
+  </a>`;
+}
+
+async function fetchFeed(url) {
+  try {
+    const res = await fetch(RSS_PROXY + encodeURIComponent(url));
+    const data = await res.json();
+    if (data.status === 'ok') return data.items || [];
+    return [];
+  } catch { return []; }
+}
+
+async function loadDomesticNews() {
+  const el = document.getElementById('domestic-news');
+  const results = await Promise.all(DOMESTIC_FEEDS.map(fetchFeed));
+  const items = results.flat().slice(0, 8);
+  if (!items.length) {
+    el.innerHTML = `<div class="news-error">🔄 국내 뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>`;
+    return;
+  }
+  el.innerHTML = items.map(i => newsCardHTML(i, '국내', 'badge-domestic')).join('');
+}
+
+async function translateText(text) {
+  if (!text) return '';
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0,400))}&langpair=en|ko`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data?.responseData?.translatedText || text;
+  } catch { return text; }
+}
+
+async function loadOverseasNews() {
+  const el = document.getElementById('overseas-news');
+  const results = await Promise.all(OVERSEAS_FEEDS.map(fetchFeed));
+  const items = results.flat().slice(0, 6);
+  if (!items.length) {
+    el.innerHTML = `<div class="news-error">🔄 해외 뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="news-loading" style="grid-column:1/-1;"><div class="spin">🌐</div><div>해외 뉴스 번역 중...</div></div>`;
+
+  const translated = await Promise.all(items.map(async i => {
+    const title = (i.title || '').replace(/<[^>]+>/g, '').trim();
+    const desc  = (i.description || i.content || '').replace(/<[^>]+>/g, '').trim().slice(0, 120);
+    const [tTitle, tDesc] = await Promise.all([
+      translateText(title),
+      translateText(desc)
+    ]);
+    return { ...i, title: tTitle, description: tDesc };
+  }));
+
+  el.innerHTML = translated.map(i => newsCardHTML(i, 'PGA·LPGA', 'badge-overseas')).join('');
+}
+
+async function loadAllNews() {
+  window._newsLoaded = false;
+  document.getElementById('domestic-news').innerHTML =
+    '<div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>';
+  document.getElementById('overseas-news').innerHTML =
+    '<div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 번역 중...</div></div>';
+  await Promise.all([loadDomesticNews(), loadOverseasNews()]);
+  window._newsLoaded = true;
+}
 
 </script>
 </body>
