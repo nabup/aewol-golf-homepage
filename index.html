@@ -179,6 +179,8 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 .news-card-badge{display:inline-block;font-size:0.62rem;padding:0.15rem 0.5rem;border-radius:8px;font-weight:600;margin-bottom:0.5rem;}
 .badge-domestic{background:#E1F5EE;color:#085041;}
 .badge-overseas{background:#FFF3CD;color:#856404;}
+.badge-jeju{background:#FFE0B2;color:#7C4A03;font-weight:700;}
+.badge-korean{background:#FCD9DC;color:#8A1F2B;font-weight:700;}
 .news-loading{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:0.9rem;}
 .news-loading .spin{display:inline-block;font-size:1.5rem;animation:spin 1s linear infinite;margin-bottom:0.5rem;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -379,23 +381,23 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 <div class="tab-content" id="tab-news">
   <div class="sec-label">GOLF NEWS</div>
   <h2 class="sec-title">골프 뉴스</h2>
-  <p class="sec-desc">국내외 최신 골프 소식을 실시간으로 전해드립니다.</p>
+  <p class="sec-desc">KPGA·KLPGA·PGA·LPGA 경기 결과 중심으로 전해드리며, <strong>제주 출신 선수</strong>와 <strong>한국 선수</strong> 활약은 따로 모았습니다.</p>
 
   <!-- 국내 뉴스 -->
-  <div class="news-section-label">🇰🇷 국내 골프뉴스</div>
+  <div class="news-section-label">🇰🇷 국내 골프뉴스 — KPGA · KLPGA 경기 결과 · 제주 출신 선수</div>
   <div id="domestic-news" class="news-grid">
     <div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>
   </div>
 
   <!-- 해외 뉴스 -->
-  <div class="news-section-label">🌍 해외 골프뉴스 (PGA·LPGA)</div>
+  <div class="news-section-label">🌍 해외 골프뉴스 — PGA · LPGA 경기 결과 · 한국 선수 활약</div>
   <div id="overseas-news" class="news-grid">
     <div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 불러오는 중...</div></div>
   </div>
 
   <div style="text-align:center;margin-top:1rem;">
     <button class="news-refresh-btn" onclick="loadAllNews()">🔄 뉴스 새로고침</button>
-    <p class="news-source-note">국내: Google News RSS · 해외: GOLF.com / FOX Sports / USGA / Google News</p>
+    <p class="news-source-note">Google News RSS 기반 · 경기 결과 위주로 자동 수집</p>
   </div>
 </div>
 
@@ -464,49 +466,59 @@ function googleNewsUrl(query, hl = 'ko', gl = 'KR', ceid = 'KR:ko') {
 
 const DOMESTIC_FEEDS = [
   {
-    name: 'Google News · 국내 골프',
-    url: googleNewsUrl('골프 OR KLPGA OR KPGA when:14d'),
+    name: 'KPGA 경기 결과',
+    url: googleNewsUrl('KPGA 우승 OR KPGA 결과 OR KPGA 최종라운드 when:21d'),
     lang: 'ko'
   },
   {
-    name: 'Google News · 제주 골프',
-    url: googleNewsUrl('제주 골프 OR 엘리시안 제주 when:30d'),
+    name: 'KLPGA 경기 결과',
+    url: googleNewsUrl('KLPGA 우승 OR KLPGA 결과 OR KLPGA 최종라운드 when:21d'),
     lang: 'ko'
+  },
+  {
+    name: '제주 출신 선수',
+    url: googleNewsUrl('"제주 출신" 골프 OR 제주 골퍼 OR 제주출신 프로 when:60d'),
+    lang: 'ko',
+    badge: '🍊 제주'
   }
 ];
 
 const OVERSEAS_FEEDS = [
   {
-    name: 'Google News · PGA/LPGA 한국어',
-    url: googleNewsUrl('PGA OR LPGA 골프 when:14d', 'ko', 'KR', 'KR:ko'),
+    name: '한국선수 PGA 활약',
+    url: googleNewsUrl('임성재 OR 김주형 OR 안병훈 OR "PGA 한국선수" 우승 when:21d'),
+    lang: 'ko',
+    badge: '🇰🇷 한국선수'
+  },
+  {
+    name: '한국선수 LPGA 활약',
+    url: googleNewsUrl('고진영 OR 김효주 OR 양희영 OR "LPGA 한국선수" 우승 when:21d'),
+    lang: 'ko',
+    badge: '🇰🇷 한국선수'
+  },
+  {
+    name: 'PGA 투어 결과',
+    url: googleNewsUrl('PGA Tour 우승 OR PGA 최종라운드 when:14d'),
     lang: 'ko'
   },
   {
-    name: 'GOLF.com',
-    url: 'https://golf.com/feed/',
-    lang: 'en'
-  },
-  {
-    name: 'FOX Sports Golf',
-    url: 'https://api.foxsports.com/v2/content/optimized-rss?partnerKey=MB0Wehpmuj2lUhuRhQaafhBjAJqaPU244mlTDK1i&size=30&tags=fs%2Fkorn-ferry-tour%2Cfs%2Flpga-tour%2Cfs%2Fpga-tour%2Cfs%2Fliv',
-    lang: 'en'
-  },
-  {
-    name: 'USGA Press Releases',
-    url: 'https://mediacenter.usga.org/press-releases?pagetemplate=rss',
-    lang: 'en'
+    name: 'LPGA 투어 결과',
+    url: googleNewsUrl('LPGA 우승 OR LPGA 최종라운드 when:14d'),
+    lang: 'ko'
   }
 ];
 
 const NEWS_FALLBACK_LINKS = {
   domestic: [
-    { title: 'Google 뉴스에서 국내 골프뉴스 보기', url: 'https://news.google.com/search?q=%EA%B3%A8%ED%94%84%20KLPGA%20KPGA&hl=ko&gl=KR&ceid=KR%3Ako' },
-    { title: 'Google 뉴스에서 제주 골프뉴스 보기', url: 'https://news.google.com/search?q=%EC%A0%9C%EC%A3%BC%20%EA%B3%A8%ED%94%84&hl=ko&gl=KR&ceid=KR%3Ako' }
+    { title: 'KPGA 공식 홈페이지', url: 'https://www.kpga.co.kr/' },
+    { title: 'KLPGA 공식 홈페이지', url: 'https://www.klpga.co.kr/' },
+    { title: 'Google 뉴스 · 제주 골프 검색', url: 'https://news.google.com/search?q=%EC%A0%9C%EC%A3%BC+%EC%B6%9C%EC%8B%A0+%EA%B3%A8%ED%94%84&hl=ko&gl=KR&ceid=KR%3Ako' }
   ],
   overseas: [
-    { title: 'GOLF.com 최신 뉴스 보기', url: 'https://golf.com/news/' },
-    { title: 'FOX Sports Golf 뉴스 보기', url: 'https://www.foxsports.com/golf' },
-    { title: 'USGA 뉴스 보기', url: 'https://mediacenter.usga.org/' }
+    { title: 'Google 뉴스 · 한국선수 PGA 검색', url: 'https://news.google.com/search?q=%ED%95%9C%EA%B5%AD%EC%84%A0%EC%88%98+PGA&hl=ko&gl=KR&ceid=KR%3Ako' },
+    { title: 'Google 뉴스 · 한국선수 LPGA 검색', url: 'https://news.google.com/search?q=%ED%95%9C%EA%B5%AD%EC%84%A0%EC%88%98+LPGA&hl=ko&gl=KR&ceid=KR%3Ako' },
+    { title: 'PGA Tour 공식', url: 'https://www.pgatour.com/' },
+    { title: 'LPGA 공식', url: 'https://www.lpga.com/' }
   ]
 };
 
@@ -574,6 +586,7 @@ function normalizeItem(item, feed) {
     pubDate: item.pubDate || item.published || item.updated || '',
     source: stripHTML(item.source || item.author || feed.name),
     feedName: feed.name,
+    feedBadge: feed.badge || '',
     lang: feed.lang || 'ko'
   };
 }
@@ -712,16 +725,20 @@ async function translateOverseasItems(items) {
 async function loadDomesticNews() {
   const el = document.getElementById('domestic-news');
   const results = await Promise.all(DOMESTIC_FEEDS.map(fetchFeed));
-  const items = uniqueAndSort(results.flat(), 8);
+  const items = uniqueAndSort(results.flat(), 9);
   el.innerHTML = items.length
-    ? items.map(item => newsCardHTML(item, '국내', 'badge-domestic')).join('')
+    ? items.map(item => {
+        const badge = item.feedBadge || '🇰🇷 국내';
+        const cls = (item.feedBadge && item.feedBadge.includes('제주')) ? 'badge-jeju' : 'badge-domestic';
+        return newsCardHTML(item, badge, cls);
+      }).join('')
     : fallbackHTML('domestic');
 }
 
 async function loadOverseasNews() {
   const el = document.getElementById('overseas-news');
   const results = await Promise.all(OVERSEAS_FEEDS.map(fetchFeed));
-  let items = uniqueAndSort(results.flat(), 6);
+  let items = uniqueAndSort(results.flat(), 9);
   if (!items.length) {
     el.innerHTML = fallbackHTML('overseas');
     return;
@@ -729,7 +746,11 @@ async function loadOverseasNews() {
 
   el.innerHTML = '<div class="news-loading" style="grid-column:1/-1;"><div class="spin">🌐</div><div>해외 뉴스 정리 중...</div></div>';
   items = await translateOverseasItems(items);
-  el.innerHTML = items.map(item => newsCardHTML(item, '해외', 'badge-overseas')).join('');
+  el.innerHTML = items.map(item => {
+    const badge = item.feedBadge || '🌍 해외';
+    const cls = (item.feedBadge && item.feedBadge.includes('한국')) ? 'badge-korean' : 'badge-overseas';
+    return newsCardHTML(item, badge, cls);
+  }).join('');
 }
 
 async function loadAllNews() {
