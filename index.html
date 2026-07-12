@@ -181,6 +181,9 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 .badge-overseas{background:#FFF3CD;color:#856404;}
 .badge-jeju{background:#FFE0B2;color:#7C4A03;font-weight:700;}
 .badge-korean{background:#FCD9DC;color:#8A1F2B;font-weight:700;}
+.badge-this-week{background:#FFD3D3;color:#8A1F2B;font-weight:700;}
+.badge-last-week{background:#D3E5FF;color:#0C447C;font-weight:500;}
+.badge-next-week{background:#E5D9F2;color:#4B2A75;font-weight:500;}
 .news-loading{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:0.9rem;}
 .news-loading .spin{display:inline-block;font-size:1.5rem;animation:spin 1s linear infinite;margin-bottom:0.5rem;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -381,10 +384,10 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
 <div class="tab-content" id="tab-news">
   <div class="sec-label">GOLF NEWS</div>
   <h2 class="sec-title">골프 뉴스</h2>
-  <p class="sec-desc">KPGA·KLPGA·PGA·LPGA 경기 결과 중심으로 전해드리며, <strong>제주 출신 선수</strong>와 <strong>한국 선수</strong> 활약은 따로 모았습니다.</p>
+  <p class="sec-desc">KPGA·KLPGA 이번주 경기 결과를 먼저 보여드리고, 없으면 지난주 결과 · 그것도 없으면 다음주 일정 순으로 자동 표시합니다.</p>
 
   <!-- 국내 뉴스 -->
-  <div class="news-section-label">🇰🇷 국내 골프뉴스 — KPGA · KLPGA 경기 결과 · 제주 출신 선수</div>
+  <div class="news-section-label">🇰🇷 국내 골프뉴스 — KPGA · KLPGA 경기 결과 및 일정</div>
   <div id="domestic-news" class="news-grid">
     <div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>
   </div>
@@ -456,8 +459,11 @@ updateCountdown();
    CORS 차단이 발생할 수 있어 RSS2JSON → AllOrigins → CodeTabs 순서로 시도합니다. */
 const RSS2JSON_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
 const ALLORIGINS_PROXY = 'https://api.allorigins.win/raw?url=';
+const ALLORIGINS_GET_PROXY = 'https://api.allorigins.win/get?url=';
 const CODETABS_PROXY = 'https://api.codetabs.com/v1/proxy?quest=';
-const FETCH_TIMEOUT_MS = 4000;
+const CORSPROXY_IO = 'https://corsproxy.io/?url=';
+const THINGPROXY = 'https://thingproxy.freeboard.io/fetch/';
+const FETCH_TIMEOUT_MS = 3000;
 const TRANSLATE_OVERSEAS = false;
 const NEWS_CACHE_MS = 10 * 60 * 1000; // 10분 캐시
 
@@ -467,20 +473,22 @@ function googleNewsUrl(query, hl = 'ko', gl = 'KR', ceid = 'KR:ko') {
 
 const DOMESTIC_FEEDS = [
   {
-    name: 'KPGA 경기 결과',
-    url: googleNewsUrl('"KPGA" (우승 OR 결과 OR 최종라운드 OR 챔피언) when:21d'),
-    lang: 'ko'
-  },
-  {
-    name: 'KLPGA 경기 결과',
-    url: googleNewsUrl('"KLPGA" (우승 OR 결과 OR 최종라운드 OR 챔피언) when:21d'),
-    lang: 'ko'
-  },
-  {
-    name: '제주 출신 골프선수',
-    url: googleNewsUrl('("제주 출신" OR "제주출신") (골프 OR KPGA OR KLPGA OR 프로골퍼) when:60d'),
+    name: '이번주 경기 결과·진행',
+    url: googleNewsUrl('(KPGA OR KLPGA) (우승 OR 최종라운드 OR 챔피언 OR 우승자 OR 시상식 OR 선두 OR 리더 OR 1R OR 2R OR 3R OR 4R OR 개막 OR 라운드) when:7d'),
     lang: 'ko',
-    badge: '🍊 제주'
+    priority: 1
+  },
+  {
+    name: '지난주 경기 결과',
+    url: googleNewsUrl('(KPGA OR KLPGA) (우승 OR 최종라운드 OR 챔피언 OR 우승자) when:14d'),
+    lang: 'ko',
+    priority: 2
+  },
+  {
+    name: '다음주 경기 일정',
+    url: googleNewsUrl('(KPGA OR KLPGA) (개막 OR "이번주" OR "다음주" OR 일정 OR 프리뷰 OR 티오프 OR 대회예고 OR 출전) when:7d'),
+    lang: 'ko',
+    priority: 3
   }
 ];
 
@@ -588,6 +596,7 @@ function normalizeItem(item, feed) {
     source: stripHTML(item.source || item.author || feed.name),
     feedName: feed.name,
     feedBadge: feed.badge || '',
+    feedPriority: feed.priority || 99,
     lang: feed.lang || 'ko'
   };
 }
@@ -635,11 +644,22 @@ async function fetchFeedWithXmlProxy(feed, proxyBase) {
   return parseXmlFeed(xmlText, feed);
 }
 
+async function fetchFeedWithAlloriginsGet(feed) {
+  const res = await fetchWithTimeout(ALLORIGINS_GET_PROXY + encodeURIComponent(feed.url));
+  const data = await res.json();
+  const xmlText = data && data.contents ? data.contents : '';
+  if (!xmlText || !/<(rss|feed|item|entry)[\s>]/i.test(xmlText)) throw new Error('RSS XML 없음');
+  return parseXmlFeed(xmlText, feed);
+}
+
 async function fetchFeed(feed) {
   const loaders = [
     () => fetchFeedWithRss2Json(feed),
     () => fetchFeedWithXmlProxy(feed, ALLORIGINS_PROXY),
-    () => fetchFeedWithXmlProxy(feed, CODETABS_PROXY)
+    () => fetchFeedWithAlloriginsGet(feed),
+    () => fetchFeedWithXmlProxy(feed, CORSPROXY_IO),
+    () => fetchFeedWithXmlProxy(feed, CODETABS_PROXY),
+    () => fetchFeedWithXmlProxy(feed, THINGPROXY)
   ];
 
   for (const loader of loaders) {
@@ -778,9 +798,25 @@ async function translateOverseasItems(items) {
   }));
 }
 
+// 우선순위별 배지·색상
+function priorityBadge(item) {
+  const p = item.feedPriority || 99;
+  if (p === 1) return { badge: '🔥 이번주 결과', cls: 'badge-this-week' };
+  if (p === 2) return { badge: '📅 지난주 결과', cls: 'badge-last-week' };
+  if (p === 3) return { badge: '📆 다음주 일정', cls: 'badge-next-week' };
+  return { badge: '🇰🇷 국내', cls: 'badge-domestic' };
+}
+
+function renderDomesticItems(items) {
+  return items.map(item => {
+    const { badge, cls } = priorityBadge(item);
+    return newsCardHTML(item, badge, cls);
+  }).join('');
+}
+
 async function loadDomesticNews() {
   const el = document.getElementById('domestic-news');
-  const CACHE_KEY = 'aewol_domestic_news_v1';
+  const CACHE_KEY = 'aewol_domestic_news_v2';
 
   // 캐시 확인 (10분 이내면 즉시 표시)
   try {
@@ -788,33 +824,59 @@ async function loadDomesticNews() {
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed.ts && Date.now() - parsed.ts < NEWS_CACHE_MS && Array.isArray(parsed.items) && parsed.items.length) {
-        el.innerHTML = parsed.items.map(item => {
-          const badge = item.feedBadge || '🇰🇷 국내';
-          const cls = (item.feedBadge && item.feedBadge.includes('제주')) ? 'badge-jeju' : 'badge-domestic';
-          return newsCardHTML(item, badge, cls);
-        }).join('');
+        el.innerHTML = renderDomesticItems(parsed.items);
         return;
       }
     }
   } catch {}
 
-  const results = await Promise.all(DOMESTIC_FEEDS.map(fetchFeed));
-  const items = uniqueAndSort(results.flat(), 9);
+  // 각 피드를 개별적으로 병렬 수집
+  const feedResults = await Promise.all(DOMESTIC_FEEDS.map(async feed => {
+    const items = await fetchFeed(feed);
+    return { feed, items };
+  }));
+
+  // 각 계층별로 중복 제거 + 골프 필터
+  const tier1 = uniqueAndSort(feedResults[0].items, 12); // 이번주 결과
+  const tier2 = uniqueAndSort(feedResults[1].items, 12); // 지난주 결과
+  const tier3 = uniqueAndSort(feedResults[2].items, 12); // 다음주 일정
+
+  // 이미 표시된 사건 키 기록 — 하위 계층에서 같은 사건 재등장 시 제외
+  const usedKeys = new Set();
+  const finalItems = [];
+
+  const addUnique = (list, limit) => {
+    for (const item of list) {
+      if (finalItems.length >= limit) break;
+      const key = eventKey(item.title);
+      if (!key || usedKeys.has(key)) continue;
+      usedKeys.add(key);
+      finalItems.push(item);
+    }
+  };
+
+  // 우선순위: 이번주 결과 최우선 → 부족하면 지난주 → 그래도 부족하면 다음주 일정
+  if (tier1.length > 0) {
+    addUnique(tier1, 9);
+    // 이번주 결과가 있어도 8건 미만이면 지난주로 보충
+    if (finalItems.length < 8) addUnique(tier2, 9);
+    // 여전히 부족하면 다음주 일정으로 보충
+    if (finalItems.length < 6) addUnique(tier3, 9);
+  } else if (tier2.length > 0) {
+    addUnique(tier2, 9);
+    if (finalItems.length < 6) addUnique(tier3, 9);
+  } else {
+    addUnique(tier3, 9);
+  }
 
   // 캐시 저장
   try {
-    if (items.length) {
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), items }));
+    if (finalItems.length) {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), items: finalItems }));
     }
   } catch {}
 
-  el.innerHTML = items.length
-    ? items.map(item => {
-        const badge = item.feedBadge || '🇰🇷 국내';
-        const cls = (item.feedBadge && item.feedBadge.includes('제주')) ? 'badge-jeju' : 'badge-domestic';
-        return newsCardHTML(item, badge, cls);
-      }).join('')
-    : fallbackHTML('domestic');
+  el.innerHTML = finalItems.length ? renderDomesticItems(finalItems) : fallbackHTML('domestic');
 }
 
 async function loadOverseasNews() {
@@ -838,7 +900,7 @@ async function loadOverseasNews() {
 async function loadAllNews() {
   window._newsLoaded = false;
   // 새로고침 시 캐시 삭제 (강제 재수집)
-  try { sessionStorage.removeItem('aewol_domestic_news_v1'); } catch {}
+  try { sessionStorage.removeItem('aewol_domestic_news_v2'); } catch {}
   document.getElementById('domestic-news').innerHTML =
     '<div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>';
   // 해외 뉴스는 속도 최적화를 위해 일시 비활성화
