@@ -389,15 +389,15 @@ tbody td{padding:0.7rem 1rem;font-size:0.85rem;color:var(--mid);}
     <div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>
   </div>
 
-  <!-- 해외 뉴스 -->
-  <div class="news-section-label">🌍 해외 골프뉴스 — PGA · LPGA 경기 결과 · 한국 선수 활약</div>
-  <div id="overseas-news" class="news-grid">
+  <!-- 해외 뉴스 (일시 숨김 — 로딩 속도 최적화를 위해 국내만 표시) -->
+  <div class="news-section-label" style="display:none;">🌍 해외 골프뉴스 — PGA · LPGA 경기 결과 · 한국 선수 활약</div>
+  <div id="overseas-news" class="news-grid" style="display:none;">
     <div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 불러오는 중...</div></div>
   </div>
 
   <div style="text-align:center;margin-top:1rem;">
     <button class="news-refresh-btn" onclick="loadAllNews()">🔄 뉴스 새로고침</button>
-    <p class="news-source-note">Google News RSS 기반 · 제목/요약 재검사 후 골프 기사만 표시</p>
+    <p class="news-source-note">Google News RSS 기반 · 경기 결과 위주로 자동 수집</p>
   </div>
 </div>
 
@@ -457,8 +457,9 @@ updateCountdown();
 const RSS2JSON_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
 const ALLORIGINS_PROXY = 'https://api.allorigins.win/raw?url=';
 const CODETABS_PROXY = 'https://api.codetabs.com/v1/proxy?quest=';
-const FETCH_TIMEOUT_MS = 9000;
-const TRANSLATE_OVERSEAS = true;
+const FETCH_TIMEOUT_MS = 4000;
+const TRANSLATE_OVERSEAS = false;
+const NEWS_CACHE_MS = 10 * 60 * 1000; // 10분 캐시
 
 function googleNewsUrl(query, hl = 'ko', gl = 'KR', ceid = 'KR:ko') {
   return `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=${encodeURIComponent(hl)}&gl=${encodeURIComponent(gl)}&ceid=${encodeURIComponent(ceid)}`;
@@ -467,52 +468,44 @@ function googleNewsUrl(query, hl = 'ko', gl = 'KR', ceid = 'KR:ko') {
 const DOMESTIC_FEEDS = [
   {
     name: 'KPGA 경기 결과',
-    url: googleNewsUrl('KPGA 골프 (우승 OR 결과 OR 최종라운드 OR 대회 OR 투어) when:21d'),
-    lang: 'ko',
-    focusKeywords: ['kpga','한국프로골프','코리안투어']
+    url: googleNewsUrl('"KPGA" (우승 OR 결과 OR 최종라운드 OR 챔피언) when:21d'),
+    lang: 'ko'
   },
   {
     name: 'KLPGA 경기 결과',
-    url: googleNewsUrl('KLPGA 골프 (우승 OR 결과 OR 최종라운드 OR 대회 OR 투어) when:21d'),
-    lang: 'ko',
-    focusKeywords: ['klpga','한국여자프로골프']
+    url: googleNewsUrl('"KLPGA" (우승 OR 결과 OR 최종라운드 OR 챔피언) when:21d'),
+    lang: 'ko'
   },
   {
-    name: '제주 출신 선수',
-    url: googleNewsUrl('골프 ("제주 출신" OR 제주출신 OR 제주 골퍼 OR 제주 프로골퍼) when:60d'),
+    name: '제주 출신 골프선수',
+    url: googleNewsUrl('("제주 출신" OR "제주출신") (골프 OR KPGA OR KLPGA OR 프로골퍼) when:60d'),
     lang: 'ko',
-    badge: '🍊 제주',
-    focusKeywords: ['골프','골퍼','프로골퍼','kpga','klpga','pga','lpga'],
-    mustHaveOneOf: ['제주','제주출신','제주 출신']
+    badge: '🍊 제주'
   }
 ];
 
 const OVERSEAS_FEEDS = [
   {
     name: '한국선수 PGA 활약',
-    url: googleNewsUrl('골프 PGA (임성재 OR 김주형 OR 안병훈 OR 김시우 OR 한국선수) when:21d'),
+    url: googleNewsUrl('(임성재 OR 김주형 OR 안병훈 OR 김시우) "PGA" when:21d'),
     lang: 'ko',
-    badge: '🇰🇷 한국선수',
-    focusKeywords: ['pga','임성재','김주형','안병훈','김시우']
+    badge: '🇰🇷 한국선수'
   },
   {
     name: '한국선수 LPGA 활약',
-    url: googleNewsUrl('골프 LPGA (고진영 OR 김효주 OR 양희영 OR 유해란 OR 최혜진 OR 한국선수) when:21d'),
+    url: googleNewsUrl('(고진영 OR 김효주 OR 양희영 OR 박성현 OR 유해란) "LPGA" when:21d'),
     lang: 'ko',
-    badge: '🇰🇷 한국선수',
-    focusKeywords: ['lpga','고진영','김효주','양희영','유해란','최혜진','전인지','김세영']
+    badge: '🇰🇷 한국선수'
   },
   {
     name: 'PGA 투어 결과',
-    url: googleNewsUrl('골프 PGA Tour (우승 OR 결과 OR 최종라운드 OR 챔피언십) when:14d'),
-    lang: 'ko',
-    focusKeywords: ['pga','tour']
+    url: googleNewsUrl('"PGA Tour" (우승 OR 챔피언 OR 최종라운드) when:14d'),
+    lang: 'ko'
   },
   {
     name: 'LPGA 투어 결과',
-    url: googleNewsUrl('골프 LPGA (우승 OR 결과 OR 최종라운드 OR 챔피언십) when:14d'),
-    lang: 'ko',
-    focusKeywords: ['lpga']
+    url: googleNewsUrl('"LPGA" 골프 (우승 OR 챔피언 OR 최종라운드) when:14d'),
+    lang: 'ko'
   }
 ];
 
@@ -599,61 +592,6 @@ function normalizeItem(item, feed) {
   };
 }
 
-/* 골프뉴스 엄격 필터
-   Google News RSS는 검색어와 다른 종목 기사를 섞어 줄 수 있습니다.
-   따라서 화면 출력 전 제목·요약·출처를 다시 검사해 골프 관련 기사만 남깁니다. */
-const GOLF_KEYWORDS = [
-  '골프','골퍼','프로골퍼','kpga','klpga','pga','lpga','usga','골프장',
-  '코리안투어','한국프로골프','한국여자프로골프','마스터스','디오픈','라이더컵','프레지던츠컵',
-  '임성재','김주형','안병훈','김시우','고진영','김효주','양희영','유해란','최혜진','전인지','김세영','박인비',
-  '셰플러','매킬로이','넬리 코다','릴리아 부'
-];
-
-const GOLF_EVENT_KEYWORDS = [
-  '우승','준우승','공동','단독','선두','최종','최종라운드','라운드','언더파','버디','보기','이글',
-  '컷통과','컷 탈락','티샷','퍼트','퍼팅','드라이버','페어웨이','그린','투어','대회','챔피언십','오픈'
-];
-
-const NON_GOLF_KEYWORDS = [
-  '축구','야구','농구','배구','테니스','탁구','배드민턴','핸드볼','럭비','크리켓','수영','육상','마라톤',
-  '피겨','스케이팅','스키','스노보드','복싱','격투기','ufc','f1','모터스포츠','e스포츠','롤드컵','리그오브레전드',
-  'kbo','mlb','nba','kbl','v리그','월드컵','올림픽','아시안게임','토트넘','맨유','리버풀','손흥민','이강인','김민재'
-];
-
-const HARD_EXCLUDE_KEYWORDS = [
-  '부동산','아파트','분양','주식','코인','환율','선거','정당','대통령','국회','범죄','화재','교통사고','날씨'
-];
-
-function includesAny(text, words) {
-  const lower = String(text || '').toLowerCase();
-  return words.some(word => lower.includes(String(word).toLowerCase()));
-}
-
-function isStrictGolfNews(item, feed) {
-  const haystack = `${item.title || ''} ${item.description || ''} ${item.source || ''} ${item.feedName || ''}`.toLowerCase();
-
-  // 1차: 명백히 다른 일반 뉴스는 제거
-  if (includesAny(haystack, HARD_EXCLUDE_KEYWORDS) && !includesAny(haystack, GOLF_KEYWORDS)) return false;
-
-  // 2차: 골프 핵심 단어가 반드시 있어야 함
-  if (!includesAny(haystack, GOLF_KEYWORDS)) return false;
-
-  // 3차: 각 피드의 주제어도 하나 이상 포함되어야 함
-  if (Array.isArray(feed.focusKeywords) && feed.focusKeywords.length && !includesAny(haystack, feed.focusKeywords)) return false;
-
-  // 4차: 제주 피드처럼 반드시 필요한 지역/대상 조건이 있으면 검사
-  if (Array.isArray(feed.mustHaveOneOf) && feed.mustHaveOneOf.length && !includesAny(haystack, feed.mustHaveOneOf)) return false;
-
-  // 5차: 다른 종목 키워드가 섞인 경우, 골프 경기·투어 문맥이 없으면 제거
-  if (includesAny(haystack, NON_GOLF_KEYWORDS) && !includesAny(haystack, GOLF_EVENT_KEYWORDS)) return false;
-
-  return true;
-}
-
-function filterGolfOnly(items, feed) {
-  return items.filter(item => isStrictGolfNews(item, feed));
-}
-
 function parseXmlFeed(xmlText, feed) {
   const parser = new DOMParser();
   const xml = parser.parseFromString(xmlText, 'text/xml');
@@ -670,15 +608,17 @@ function parseXmlFeed(xmlText, feed) {
 }
 
 async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT_MS) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal, cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res;
-  } finally {
-    clearTimeout(timer);
-  }
+  // AbortSignal은 rss2json 프록시의 postMessage 내부 처리와 호환되지 않아
+  // DataCloneError가 발생하므로, Promise.race로 타임아웃을 구현
+  const fetchPromise = fetch(url, { ...options, cache: 'no-store' })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res;
+    });
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout)
+  );
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 async function fetchFeedWithRss2Json(feed) {
@@ -704,7 +644,7 @@ async function fetchFeed(feed) {
 
   for (const loader of loaders) {
     try {
-      const items = filterGolfOnly(await loader(), feed);
+      const items = await loader();
       if (items.length) return items;
     } catch (err) {
       console.warn(`[골프뉴스] ${feed.name} 수집 실패 후 다음 방법 시도`, err);
@@ -744,21 +684,32 @@ function eventKey(title) {
   return words.join('|');
 }
 
+// 골프 관련 키워드 — 이 중 하나라도 제목/본문에 있어야 통과
+const GOLF_KEYWORDS = ['골프','골퍼','KPGA','KLPGA','PGA','LPGA','LIV','우드','버디','이글','퍼팅','드라이버','그린피','캐디','홀인원','챔피언십','마스터스','오픈챔피언십','US오픈','PGA투어','LPGA투어','메이저대회','시드권','아이언','웨지','퍼터','라운드','샷','tour','golf','birdie','eagle','par'];
+
+function isGolfRelated(item) {
+  const text = ((item.title || '') + ' ' + (item.description || '')).toLowerCase();
+  return GOLF_KEYWORDS.some(k => text.includes(k.toLowerCase()));
+}
+
 function uniqueAndSort(items, limit) {
+  // 1단계: 골프 관련 뉴스만 통과
+  const golfOnly = items.filter(isGolfRelated);
+
+  // 2단계: 사건별 그룹핑 + 신뢰도 높은 소스 우선 선택
   const groups = new Map();
-  for (const item of items) {
+  for (const item of golfOnly) {
     const key = eventKey(item.title);
     if (!key) continue;
     if (!groups.has(key)) {
       groups.set(key, item);
     } else {
-      // 같은 사건 — 신뢰도 높은(=tier 숫자 작은) 기사로 교체
       const existing = groups.get(key);
       if (sourceTier(item) < sourceTier(existing)) groups.set(key, item);
     }
   }
 
-  // 최종: 신뢰도 우선, 같은 등급이면 최신순
+  // 3단계: 최종 정렬 — 신뢰도 우선, 같은 등급이면 최신순
   return [...groups.values()]
     .sort((a, b) => {
       const tierDiff = sourceTier(a) - sourceTier(b);
@@ -829,8 +780,34 @@ async function translateOverseasItems(items) {
 
 async function loadDomesticNews() {
   const el = document.getElementById('domestic-news');
+  const CACHE_KEY = 'aewol_domestic_news_v1';
+
+  // 캐시 확인 (10분 이내면 즉시 표시)
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed.ts && Date.now() - parsed.ts < NEWS_CACHE_MS && Array.isArray(parsed.items) && parsed.items.length) {
+        el.innerHTML = parsed.items.map(item => {
+          const badge = item.feedBadge || '🇰🇷 국내';
+          const cls = (item.feedBadge && item.feedBadge.includes('제주')) ? 'badge-jeju' : 'badge-domestic';
+          return newsCardHTML(item, badge, cls);
+        }).join('');
+        return;
+      }
+    }
+  } catch {}
+
   const results = await Promise.all(DOMESTIC_FEEDS.map(fetchFeed));
   const items = uniqueAndSort(results.flat(), 9);
+
+  // 캐시 저장
+  try {
+    if (items.length) {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), items }));
+    }
+  } catch {}
+
   el.innerHTML = items.length
     ? items.map(item => {
         const badge = item.feedBadge || '🇰🇷 국내';
@@ -860,12 +837,12 @@ async function loadOverseasNews() {
 
 async function loadAllNews() {
   window._newsLoaded = false;
+  // 새로고침 시 캐시 삭제 (강제 재수집)
+  try { sessionStorage.removeItem('aewol_domestic_news_v1'); } catch {}
   document.getElementById('domestic-news').innerHTML =
     '<div class="news-loading"><div class="spin">⛳</div><div>국내 뉴스 불러오는 중...</div></div>';
-  document.getElementById('overseas-news').innerHTML =
-    '<div class="news-loading"><div class="spin">🌐</div><div>해외 뉴스 불러오는 중...</div></div>';
-
-  await Promise.allSettled([loadDomesticNews(), loadOverseasNews()]);
+  // 해외 뉴스는 속도 최적화를 위해 일시 비활성화
+  await loadDomesticNews();
   window._newsLoaded = true;
 }
 
